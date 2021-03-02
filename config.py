@@ -1,5 +1,5 @@
 LABEL_SIZE = 2  # in bytes
-USE_POINT_PERMUTE = True  #
+USE_POINT_PERMUTE = False  #
 USE_FREE_XOR = False  # NYI
 USE_GRR3 = False  # NYI
 USE_SIMPLEST_OT = True
