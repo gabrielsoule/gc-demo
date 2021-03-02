@@ -65,4 +65,7 @@ class Label:
             return self.bits
 
     def __eq__(self, other):
-        return self.bits == other.bits and self.pp_bit == other.pp_bit
+        if config.USE_POINT_PERMUTE:
+            return self.bits == other.bits and self.pp_bit == other.pp_bit
+        else:
+            return self.bits == other.bits
