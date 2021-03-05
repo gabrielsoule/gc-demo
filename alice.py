@@ -127,6 +127,7 @@ class Alice:
             self.encrypted_entries[encrypted_label] = (l1, l2)  # cache ciphertext -> keys, to make it easier to p&p
             print("    Encrypted label: " + str(encrypted_label.hex))
             gate.table.append(encrypted_label)
+        return out_labels
 
     # Legacy gate garbling function
     # def garble_gates(self):

@@ -1,9 +1,11 @@
 import alice
 import bob
 import circuit
+import config
 import argparse
 
 from gate import Gate
+from circuit import Circuit
 
 # We're going to map the output wire identifier of each gate to the gate itself
 # This makes our tree construction much more efficient!
@@ -14,6 +16,18 @@ bob = bob.Bob()
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--point-permute", help="enable the point-and-permute optimization", action='store_true')
+    parser.add_argument("--free-xor", help="enable the free-XOR optimization", action='store_true')
+    args = parser.parse_args()
+    if args.free_xor:
+        config.USE_FREE_XOR = True
+        print("Optimization enabled: free-XOR")
+
+    if args.point_permute:
+        config.USE_POINT_PERMUTE = True
+        print("Optimization enabled: point-and-permute")
+
     # In this implementation we store wires as strings, whose values are those supplied by the user. 
     # These strings uniquely identify the corresponding wire. Not to be confused with labels, for which there are 
     # two for every unique wire!
@@ -114,7 +128,7 @@ def main():
 
     print()
     print("Successfully generated the following circuit: ")
-    circuit = circuit.Circuit()
+    circuit = Circuit()
     # at the moment, we only support one output wire; hence output_wires[0]
     # but the infrastructure is in place to change this, if we so desire
     # to do this, we would likely have to represent the circuit as a digraph instead of a tree

@@ -2,15 +2,25 @@
 
 gc-demo is a demonstrative implementation of garbled circuits, intended to accompany the tutorial found here: (https://www.notion.so/Garbled-Circuits-A-Tutorial-Introduction-b278c5ffe0114921be59de91074016ff). The application simulates the GC protocol between two parties, Alice and Bob, for a circuit specified by the user. The code is well documented and easy to understand, and the structure of the program follows closely the structure of the written tutorial. Each step of the protocol is displayed during execution.  
 
-A number of common GC optimizations are implemented and can be enabled or disabled at will, such as point-and-permute, GRR3, and free-XOR. As of writing (3/2/2021), the application is a work in progress, so only P&P has been implemented so far. 
+A number of common GC optimizations are implemented and can be enabled or disabled at will, such as point-and-permute, GRR3, and free-XOR. As of writing (3/4/20), GRR3 has not yet been implemented. More advanced optimizations, such as FleXOR, GRR2, and Half-AND will be added eventually.
 
 ## Usage
-
-Usage is simple. Run the program from the terminal, and follow the prompts. An example session on a very simple input circuit, with all GC optimizations disabled, is given below:
+Run the program from the command line, and follow the prompts to simulate a GC exchange. The command-line flags that can be enabled are:
 
 ```
+optional arguments:
+  -h, --help            show this help message and exit
+  -pp POINT_PERMUTE, --point-permute POINT_PERMUTE
+                        enable the point-and-permute optimization
+  --free-xor FREE_XOR   enable the free-XOR optimization
+```
+
+Below is a transcript of a sample session with the point-and-permute optimization enabled.
+
+```
+Optimization enabled: point-and-permute
 Welcome! Please define your circuit by entering a sequence of logic gate specifications of the form "z = x OP y", where:
- - x and y are identifiers that uniquely specify the gate's two input wires, 
+ - x and y are identifiers that uniquely specify the gate's two input wires,
  - z is an identifier that uniquely specifies the gate's output wire
  - OP is the gate operation, which is one of "and", "or", "xor"
 Please enter one logic gate per line. When you are finished defining gates and are ready to proceed, please enter a blank line.
@@ -25,78 +35,91 @@ a,b
 What are Alice's boolean input values? Please enter a sequence of 0s and 1s corresponding to her input wires, separated by commas.
 1,1
 The remaining input wires, ['c', 'd']  must be supplied by Bob. Please enter a sequence of 0s and 1s corresponding to his input wires, separated by commas.
-0,1
+1,0
 
-Successfully generated the following circuit: 
+Successfully generated the following circuit:
 g <- e AND f
 ├── e <- a AND b
 └── f <- c AND d
 
-ALICE: Generating labels for wire g: 0 = ce97, 1 = f97b
-ALICE: Generating labels for wire e: 0 = 842c, 1 = 942c
-ALICE: Generating labels for wire f: 0 = cb9e, 1 = 10af
-ALICE: Generating labels for wire a: 0 = bf98, 1 = cca1
-ALICE: Generating labels for wire c: 0 = 28b3, 1 = 3f50
-ALICE: Generating labels for wire b: 0 = 4853, 1 = 3854
-ALICE: Generating labels for wire d: 0 = 1da8, 1 = 4b8c
-ALICE: Garbling gate g <- e AND f 
-    Encrypting label ce97 with 842c, cb9e, for 0 = 0 AND 0
-    Encrypted label: d513346035d15b8a55a7f7a65777dbdb2ecd0a0bd53a93a77be0fd19bcf1fdaf
-    Encrypting label ce97 with 842c, 10af, for 0 = 0 AND 1
-    Encrypted label: efd88fe926b0a77d3522b89eb5e24e8e5d48f34fb8c575a1f78063dd13585b9c
-    Encrypting label ce97 with 942c, cb9e, for 0 = 1 AND 0
-    Encrypted label: 0cf08ff3521eb02a2853316d3b0e803b093325e14967a93c2f48ac4d864b55d0
-    Encrypting label f97b with 942c, 10af, for 1 = 1 AND 1
-    Encrypted label: 030bc5bf7ae7553e84a85ee32be5f57387ac8682293e4e01354eca0310ed727f
-ALICE: Garbling gate e <- a AND b 
-    Encrypting label 842c with bf98, 4853, for 0 = 0 AND 0
-    Encrypted label: 3019d488fe0197f7decf0e4c4b37cbcd2eb827475b12c70f34964f13bffa9380
-    Encrypting label 842c with bf98, 3854, for 0 = 0 AND 1
-    Encrypted label: bc59d68913d705fa2f200cdfbf758695f26ca396f1b49e58f18e30f090f46d9a
-    Encrypting label 842c with cca1, 4853, for 0 = 1 AND 0
-    Encrypted label: 7378b30c4d80eb29055ebc3a91ee5e0c150a5ffbbf8d8a759aa6faafe1c79090
-    Encrypting label 942c with cca1, 3854, for 1 = 1 AND 1
-    Encrypted label: d6b00ce825ce971235677e0b8520a86817ed943663ce663210b99318927051a6
-ALICE: Garbling gate f <- c AND d 
-    Encrypting label cb9e with 28b3, 1da8, for 0 = 0 AND 0
-    Encrypted label: d0ea95341b9e4679a5ac0273d654e184611eb23c776ed0fb7d3b8cb1ad4f599d
-    Encrypting label cb9e with 28b3, 4b8c, for 0 = 0 AND 1
-    Encrypted label: 4231aaf8fea05d3cc7970cbf782651c65de4021b0547027d9660758d5bd5dd45
-    Encrypting label cb9e with 3f50, 1da8, for 0 = 1 AND 0
-    Encrypted label: 260e17cc0c02651f48c6c80c86954d38583da38cdfb9c81a61e1295a0f705326
-    Encrypting label 10af with 3f50, 4b8c, for 1 = 1 AND 1
-    Encrypted label: 9e9aac488fd235b191ad55b218c50137d043b81f6c1835f9be1b8714d0e76881
-ALICE: Randomly shuffling garbled table for gate g <- e AND f
-ALICE: Randomly shuffling garbled table for gate e <- a AND b
-ALICE: Randomly shuffling garbled table for gate f <- c AND d
-OT: Alice, the sender, has messages m0 = 28b3 and m1 = 3f50. Bob, the receiver wishes to receive message m0.
-OT: Alice generates a = 18838, and keeps a secret from Bob
-OT: Bob generates b = 21706, and keeps b secret from Alice
-OT: Alice transfers A = g^a = 18711 to Bob
-OT: Since i = 0, Bob calculates B = g^b = 37239 and transfers it to Alice
-OT: Bob transfers B to Alice, and computes k = A^b = 41118
-OT: Alice computes k0 = B^a = 41118, kl (B/A)^a = 57505
-OT: Alice encrypts m0 with key k0 and transfers to Bob c0 = E(k0, m0) = 0xf263ad60bca9ace0e8bdebe51266d1e4
-OT: Alice encrypts m1 with key k1 and transfers to Bob c1 = E(k1, m1) = 0x3a09e4c4fc1bd304ff18f818c3b512ab
-OT: Bob successfully decrypts c0 to yield 28b3
-OT: Alice, the sender, has messages m0 = 1da8 and m1 = 4b8c. Bob, the receiver wishes to receive message m1.
-OT: Alice generates a = 87, and keeps a secret from Bob
-OT: Bob generates b = 63792, and keeps b secret from Alice
-OT: Alice transfers A = g^a = 10415 to Bob
-OT: Since i = 0, Bob calculates B = Ag^b = 6267 and transfers it to Alice
-OT: Bob transfers B to Alice, and computes k = A^b = 8328
-OT: Alice computes k0 = B^a = 61260, kl (B/A)^a = 8328
-OT: Alice encrypts m0 with key k0 and transfers to Bob c0 = E(k0, m0) = 0xfd9858d0d0a8ae0b4ab27d41ccd39b16
-OT: Alice encrypts m1 with key k1 and transfers to Bob c1 = E(k1, m1) = 0x16c535ab28857c2632f2e705588ccad6
-OT: Bob successfully decrypts c0 to yield 4b8c
-BOB: Evaluating gate e <- a AND b with input wire labels a = cca1, b = 3854
-BOB: Failed to decrypt 3019d488fe0197f7decf0e4c4b37cbcd2eb827475b12c70f34964f13bffa9380! Trying next entry...
-BOB: Successfully decrypted label 942c for wire e
-BOB: Evaluating gate f <- c AND d with input wire labels c = 28b3, d = 4b8c
-BOB: Successfully decrypted label cb9e for wire f
-BOB: Evaluating gate g <- e AND f with input wire labels e = 942c, f = cb9e
-BOB: Failed to decrypt efd88fe926b0a77d3522b89eb5e24e8e5d48f34fb8c575a1f78063dd13585b9c! Trying next entry...
-BOB: Failed to decrypt d513346035d15b8a55a7f7a65777dbdb2ecd0a0bd53a93a77be0fd19bcf1fdaf! Trying next entry...
-BOB: Successfully decrypted label ce97 for wire g
-Alice reveals the label ce97 for output wire g equals: 0
+ALICE: Generating labels for wire a: 0 = (d9d9, pp_bit = 0), 1 = (62e8, pp_bit = 1)
+ALICE: Generating labels for wire b: 0 = (2716, pp_bit = 1), 1 = (063d, pp_bit = 0)
+ALICE: Garbling gate e <- a AND b
+ALICE: Generating labels for wire e: 0 = (3968, pp_bit = 0), 1 = (4922, pp_bit = 1)
+    Encrypting label (3968, pp_bit = 0) with (d9d9, pp_bit = 0), (2716, pp_bit = 1), for 0 = 0 AND 0
+    Encrypted label: 9622b7bd6b138108e55e0aee7e53ce3bcc4cd0b4a4d21f15f39b7ff3e2165723
+    Encrypting label (3968, pp_bit = 0) with (d9d9, pp_bit = 0), (063d, pp_bit = 0), for 0 = 0 AND 1
+    Encrypted label: 50bf89c7c98f0b5a3e4de3b0b5604d195eaa410d4bf5fb0f43a6221347c3cc86
+    Encrypting label (3968, pp_bit = 0) with (62e8, pp_bit = 1), (2716, pp_bit = 1), for 0 = 1 AND 0
+    Encrypted label: 623d0d21a8a49c643e0f039d33eec9960eaffb5d8afe11dc1b05ff757bb83c54
+    Encrypting label (4922, pp_bit = 1) with (62e8, pp_bit = 1), (063d, pp_bit = 0), for 1 = 1 AND 1
+    Encrypted label: 011bf3cf86fc3ff0f7d64257cbcfb9ca5be1459c67938d78070c992153ea0d22
+ALICE: Generating labels for wire c: 0 = (6279, pp_bit = 0), 1 = (f138, pp_bit = 1)
+ALICE: Generating labels for wire d: 0 = (06c2, pp_bit = 0), 1 = (85da, pp_bit = 1)
+ALICE: Garbling gate f <- c AND d
+ALICE: Generating labels for wire f: 0 = (7f2d, pp_bit = 1), 1 = (ed62, pp_bit = 0)
+    Encrypting label (7f2d, pp_bit = 1) with (6279, pp_bit = 0), (06c2, pp_bit = 0), for 0 = 0 AND 0
+    Encrypted label: 6ca9c44df088b831f9ccd1560eea85acbbd1c9d835f9442626b6f1a1ff21af8a
+    Encrypting label (7f2d, pp_bit = 1) with (6279, pp_bit = 0), (85da, pp_bit = 1), for 0 = 0 AND 1
+    Encrypted label: 5c51a2e979649c973e54064833ba35f98e428a3f6e985d65a444a5b733fe3055
+    Encrypting label (7f2d, pp_bit = 1) with (f138, pp_bit = 1), (06c2, pp_bit = 0), for 0 = 1 AND 0
+    Encrypted label: b805d7a8e9c494af902f93ad9055bf45af9025547da629080007aef57c34f17c
+    Encrypting label (ed62, pp_bit = 0) with (f138, pp_bit = 1), (85da, pp_bit = 1), for 1 = 1 AND 1
+    Encrypted label: ceca127bd8abde25a9e4d6c976e507addd9266c7af0ed08b8bbce7f3cc5e113b
+ALICE: Garbling gate g <- e AND f
+ALICE: Generating labels for wire g: 0 = (63e2, pp_bit = 0), 1 = (1880, pp_bit = 1)
+    Encrypting label (63e2, pp_bit = 0) with (3968, pp_bit = 0), (7f2d, pp_bit = 1), for 0 = 0 AND 0
+    Encrypted label: 0e86cc70d1dfdd6e1b9536cb7fdc73aa64b54b1c219327eb46c9fba6ecfae6e2
+    Encrypting label (63e2, pp_bit = 0) with (3968, pp_bit = 0), (ed62, pp_bit = 0), for 0 = 0 AND 1
+    Encrypted label: 87567e4a2d29935d12663ad67aeb9ac196a39e15a4ddf865ebab94b29a96087b
+    Encrypting label (63e2, pp_bit = 0) with (4922, pp_bit = 1), (7f2d, pp_bit = 1), for 0 = 1 AND 0
+    Encrypted label: 356d1fbcc7928798be6ff1654f4c0e8196caff880f00173bcb438a60b51826ec
+    Encrypting label (1880, pp_bit = 1) with (4922, pp_bit = 1), (ed62, pp_bit = 0), for 1 = 1 AND 1
+    Encrypted label: 9081ccb68a394822633899ecc77f2a495c353ad6c94990226a1e0d398bfa4333
+ALICE: Shuffling garbled table according to select bits. The final order is:
+    00: 87567e4a2d29935d12663ad67aeb9ac196a39e15a4ddf865ebab94b29a96087b
+    01: 0e86cc70d1dfdd6e1b9536cb7fdc73aa64b54b1c219327eb46c9fba6ecfae6e2
+    10: 9081ccb68a394822633899ecc77f2a495c353ad6c94990226a1e0d398bfa4333
+    11: 356d1fbcc7928798be6ff1654f4c0e8196caff880f00173bcb438a60b51826ec
+ALICE: Shuffling garbled table according to select bits. The final order is:
+    00: 50bf89c7c98f0b5a3e4de3b0b5604d195eaa410d4bf5fb0f43a6221347c3cc86
+    01: 9622b7bd6b138108e55e0aee7e53ce3bcc4cd0b4a4d21f15f39b7ff3e2165723
+    10: 011bf3cf86fc3ff0f7d64257cbcfb9ca5be1459c67938d78070c992153ea0d22
+    11: 623d0d21a8a49c643e0f039d33eec9960eaffb5d8afe11dc1b05ff757bb83c54
+ALICE: Shuffling garbled table according to select bits. The final order is:
+    00: 6ca9c44df088b831f9ccd1560eea85acbbd1c9d835f9442626b6f1a1ff21af8a
+    01: 5c51a2e979649c973e54064833ba35f98e428a3f6e985d65a444a5b733fe3055
+    10: b805d7a8e9c494af902f93ad9055bf45af9025547da629080007aef57c34f17c
+    11: ceca127bd8abde25a9e4d6c976e507addd9266c7af0ed08b8bbce7f3cc5e113b
+OT: Alice, the sender, has messages m0 = (6279, pp_bit = 0) and m1 = (f138, pp_bit = 1). Bob, the receiver wishes to receive message m1.
+OT: Alice generates a = 53695, and keeps a secret from Bob
+OT: Bob generates b = 59718, and keeps b secret from Alice
+OT: Alice transfers A = g^a = 62033 to Bob
+OT: Since i = 0, Bob calculates B = Ag^b = 63903 and transfers it to Alice
+OT: Bob transfers B to Alice, and computes k = A^b = 42335
+OT: Alice computes k0 = B^a = 35603, kl (B/A)^a = 42335
+OT: Alice encrypts m0 with key k0 and transfers to Bob c0 = E(k0, m0) = 0x47c89c2ef8571d5c9b1d92d2151863d8
+OT: Alice encrypts m1 with key k1 and transfers to Bob c1 = E(k1, m1) = 0xb70655b915cbddfff448bd287f6d33af
+OT: Bob successfully decrypts c0 to yield (f138, pp_bit = 1)
+OT: Alice, the sender, has messages m0 = (06c2, pp_bit = 0) and m1 = (85da, pp_bit = 1). Bob, the receiver wishes to receive message m0.
+OT: Alice generates a = 29113, and keeps a secret from Bob
+OT: Bob generates b = 26801, and keeps b secret from Alice
+OT: Alice transfers A = g^a = 13041 to Bob
+OT: Since i = 0, Bob calculates B = g^b = 708 and transfers it to Alice
+OT: Bob transfers B to Alice, and computes k = A^b = 51631
+OT: Alice computes k0 = B^a = 51631, kl (B/A)^a = 22276
+OT: Alice encrypts m0 with key k0 and transfers to Bob c0 = E(k0, m0) = 0x9d160cda8559a45fc03995d703d5e059
+OT: Alice encrypts m1 with key k1 and transfers to Bob c1 = E(k1, m1) = 0x1508e47ea4400245e98f0638903cb315
+OT: Bob successfully decrypts c0 to yield (06c2, pp_bit = 0)
+BOB: Evaluating gate e <- a AND b with input wire labels a = (62e8, pp_bit = 1), b = (063d, pp_bit = 0)
+BOB: Using point-and-permute. 10 = 2; decrypting entry 2 with ciphertext 0x011bf3cf86fc3ff0f7d64257cbcfb9ca5be1459c67938d78070c992153ea0d22
+BOB: Successfully decrypted label (4922, pp_bit = 1) for wire e
+BOB: Evaluating gate f <- c AND d with input wire labels c = (f138, pp_bit = 1), d = (06c2, pp_bit = 0)
+BOB: Using point-and-permute. 10 = 2; decrypting entry 2 with ciphertext 0xb805d7a8e9c494af902f93ad9055bf45af9025547da629080007aef57c34f17c
+BOB: Successfully decrypted label (7f2d, pp_bit = 1) for wire f
+BOB: Evaluating gate g <- e AND f with input wire labels e = (4922, pp_bit = 1), f = (7f2d, pp_bit = 1)
+BOB: Using point-and-permute. 11 = 3; decrypting entry 3 with ciphertext 0x356d1fbcc7928798be6ff1654f4c0e8196caff880f00173bcb438a60b51826ec
+BOB: Successfully decrypted label (63e2, pp_bit = 0) for wire g
+Alice reveals the label (63e2, pp_bit = 0) for output wire g equals: 0
+
 ```
