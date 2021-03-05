@@ -99,5 +99,11 @@ class Bob:
             label_index, label_index, gate.table[label_index]))
         return label.from_bitstring(crypto_utils.decrypt(l2, crypto_utils.decrypt(l1, gate.table[label_index])))
 
+    '''
+    Evaluate a gate using the free-XOR optimization.
+    '''
+
     def _evaluate_gate_free_XOR(self, gate, l1, l2):
-        pass  # TODO: implement free-XOR
+        out_label = label.from_bitstring(l1.to_bitstring() ^ l2.to_bitstring())
+        print("BOB: Using Free-XOR; computing {} XOR {} = {}".format(l1, l2, out_label))
+        return label.from_bitstring(l1.to_bitstring() ^ l2.to_bitstring())  # it's that easy!

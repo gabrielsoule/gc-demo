@@ -145,10 +145,7 @@ def main():
     # Give the circuit to Alice to garble
     alice.circuit = circuit
 
-    # Instruct Alice to generate labels
-    alice.generate_labels()
-
-    # Instruct Alice to garble gates using the generated labels
+    # Instruct Alice to generate labels and garble garble gates using the generated labels
     alice.garble_gates()
 
     # Instruct Alice to permute the garbled tables 

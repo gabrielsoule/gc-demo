@@ -14,6 +14,17 @@ def generate_pair():
     # generate a random select bit
     l1 = Label(bitstring.Bits(os.urandom(config.LABEL_SIZE)), bitstring.Bits(bin=str(os.urandom(1)[0] & 1)))
     l2 = Label(bitstring.Bits(os.urandom(config.LABEL_SIZE)), l1.pp_bit ^ '0b1')  # invert the other label's select bit
+
+    # If Free-XOR is enabled, Alice generates the '1' label for a wire as the '0' label XORed with her secret R
+    # Intuitively, this is secure: Bob only ever uncovers one of two possible labels for every wire. Bob cannot learn
+    # about the other label without knowing R, and Bob cannot learn about R without knowing the other label, and
+    # fortunately for Alice, Bob knows neither.
+    # Note that if Bob is able to determine both labels for a wire, the protocol fails and everything blows up,
+    # since with both labels Bob can uncover R.
+    # This is one of the justifications for OT (instead of Alice just giving Bob both labels)
+    if config.USE_FREE_XOR:
+        l2.bits = l1.bits ^ config.R
+
     return l1, l2
 
 
@@ -35,8 +46,8 @@ Represents a Label for a certain wire. Since a label can have various metadata e
 for point-and-permute), this class abstracts away some of that complexity. 
 
 A label does not know which wire it corresponds to, or the semantic value it encodes. We let the two parties handle 
-that in their own ways, as they would in a real world implementation. 
-'''
+that in their own ways, as they would in a real world implementation. This adds some complexity, but it does nicely 
+model who would know what information in a real-world scenario '''
 
 
 class Label:
@@ -53,7 +64,7 @@ class Label:
 
     '''
     Encode this label, and any associated metadata like select bits, as a single bitstring.
-    Useful for encryption.
+    The bit length of the coding is always a multiple of 8, which conversion into bytes (and thus encryption) easy.
     '''
 
     def to_bitstring(self):
