@@ -1,36 +1,16 @@
-from bitstring import *
-from alice import Alice
-from bob import Bob
-from circuit import Circuit
-import random
-import ot
+import alice
+import bob
+import circuit
+import argparse
 
-AND = "AND"
-OR = "OR"
-XOR = "XOR"
-
-# Simple container class for a garbled gate.
-# We often use the identifier for a gate's output wire to uniquely identify the gate,
-# since every gate has a unique output wire. 
-class LogicGate:
-
-    def __init__(self):
-        self.op = ""
-        self.in1 = ""
-        self.in2 = ""
-        self.out = ""
-        self.table = []
-
-    def __str__(self):
-        return "{} <- {} {} {}".format(self.out, self.in1, self.op, self.in2)
-
+from gate import Gate
 
 # We're going to map the output wire identifier of each gate to the gate itself
 # This makes our tree construction much more efficient!
 gates = dict()
 
-alice = Alice()
-bob = Bob()
+alice = alice.Alice()
+bob = bob.Bob()
 
 
 def main():
@@ -54,13 +34,13 @@ def main():
         if not gate_info:
             break
         gate_info = gate_info.split()
-        gate = LogicGate()
+        gate = Gate()
         if gate_info[3] == "and":
-            gate.op = AND
+            gate.op = 'AND'
         elif gate_info[3] == "or":
-            gate.op = OR
+            gate.op = 'OR'
         elif gate_info[3] == "xor":
-            gate.op = XOR
+            gate.op = 'XOR'
         else:
             raise ValueError("Operation must be one of \"and\", \"or\", \"xor\"")
 
@@ -134,7 +114,7 @@ def main():
 
     print()
     print("Successfully generated the following circuit: ")
-    circuit = Circuit()
+    circuit = circuit.Circuit()
     # at the moment, we only support one output wire; hence output_wires[0]
     # but the infrastructure is in place to change this, if we so desire
     # to do this, we would likely have to represent the circuit as a digraph instead of a tree
