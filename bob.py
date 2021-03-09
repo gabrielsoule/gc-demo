@@ -77,9 +77,9 @@ class Bob:
         for entry in gate.table:
             try:
                 candidate = crypto_utils.decrypt(l2, crypto_utils.decrypt(l1, entry))
-                # with the AES implementation we are using, it seems that the padding check
-                # functions as a way to verify correct decryption, since if a message isn't padded right that probably
-                # means we don't have the right keys. But it's still good practice to verify the label is correct anyway.
+                # with the AES implementation we are using, it seems that the padding check functions as a way to
+                # verify correct decryption, since if a message isn't padded right that probably means we don't have
+                # the right keys. But it's still good practice to verify the label is correct anyway.
                 if candidate[0:config.CLASSIC_SECURITY_PARAMETER * 8].int == 0:
                     out_label = label.from_bitstring(candidate)
                     break
@@ -100,7 +100,10 @@ class Bob:
 
     def _evaluate_gate_grr3(self, gate, l1, l2):
         if l1.pp_bit == l2.pp_bit == 0:
-            return label.from_bitstring(crypto_utils.decrypt(l2, crypto_utils.decrypt(l1, bytes(16))))
+            result = label.from_bitstring(crypto_utils.decrypt(l2, crypto_utils.decrypt(l1, bytes(16))))
+            print("BOB: The select bits of both labels for this gate are zero. Decrypting 0^N, instead of accessing "
+                  "the garbled table")
+            return result
         else:
             return self._evaluate_gate_pp(gate, l1, l2)
 
@@ -108,9 +111,13 @@ class Bob:
         # as we learned in the section on point-and-permute,
         # we select the (2 * r1 + r2)th entry in the table
         label_index = l1.pp_bit * 2 + l2.pp_bit
-        print("BOB: Using point-and-permute. {}{} = {}; decrypting entry {} with ciphertext {}".format(
-            int(l1.pp_bit), int(l2.pp_bit),
-            label_index, label_index, gate.table[label_index]))
+        # since there are only three entries, we have to shift the index accordingly
+        if config.USE_GRR3:
+            label_index = label_index - 1
+        print(
+            "BOB: Using point-and-permute. {}{} corresponds to entry {}; decrypting entry {} with ciphertext {}".format(
+                int(l1.pp_bit), int(l2.pp_bit),
+                label_index, label_index, gate.table[label_index]))
         return label.from_bitstring(crypto_utils.decrypt(l2, crypto_utils.decrypt(l1, gate.table[label_index])))
 
     '''

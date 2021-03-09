@@ -17,6 +17,11 @@ def main():
     parser.add_argument("--free-xor", help="enable the free-XOR optimization", action='store_true')
     parser.add_argument("--grr3", help="enable the GRR3 optimization", action='store_true')
     args = parser.parse_args()
+
+    if args.grr3 and not args.point_permute:
+        print("The GRR3 optimization requires the point-and-permute optimization to be enabled")
+        exit(0)
+
     if args.free_xor:
         config.USE_FREE_XOR = True
         print("Optimization enabled: free-XOR")
@@ -27,7 +32,7 @@ def main():
 
     if args.grr3:
         config.USE_GRR3 = True
-        print("Optimization enabled: point-and-permute")
+        print("Optimization enabled: GRR3")
 
     alice = Alice()
     bob = Bob()

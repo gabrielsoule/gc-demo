@@ -80,11 +80,10 @@ class Alice:
             in2_labels = self.garble_gate(gate.in2)
             if gate.op == 'XOR' and config.USE_FREE_XOR:
                 return self.garble_gate_free_XOR(gate, in1_labels, in2_labels)
+            elif config.USE_GRR3:
+                return self.garble_gate_grr3(gate, in1_labels, in2_labels)
             else:
-                if config.USE_GRR3:
-                    return self.garble_gate_grr3(gate, in1_labels, in2_labels)
-                else:
-                    return self.garble_gate_standard(gate, in1_labels, in2_labels)
+                return self.garble_gate_standard(gate, in1_labels, in2_labels)
         else:
             labels = label.generate_pair()
             self.wire_labels[wire] = labels
@@ -93,11 +92,59 @@ class Alice:
 
     '''
     Garble a gate using the GRR3 optimization. Compatible with Free-XOR. 
+    Reuses a non-insignificant amount of code from garble_gate_standard. A good TODO would be to
+    reduce this redundancy. 
     '''
 
     def garble_gate_grr3(self, gate, in1_labels, in2_labels):
-        pass
+        print("ALICE: Garbling gate {} ".format(gate))
+        gate.table = []
 
+        # grab the input labels that will be placed first in the table
+        in1_zero_pp = in1_labels[0] if in1_labels[0].pp_bit == 0 else in1_labels[1]
+        in2_zero_pp = in2_labels[0] if in2_labels[0].pp_bit == 0 else in2_labels[1]
+        print("ALICE: Generating zero label for labels {}, {}".format(in1_zero_pp, in2_zero_pp))
+        zero_label = label.from_bitstring(
+            crypto_utils.decrypt(in2_zero_pp, crypto_utils.decrypt(in1_zero_pp, bitstring.Bits(128))))
+        print("ALICE: Found c = {}, where that 0^N encrypted under {}, {} = c".format(zero_label, in1_zero_pp, in2_zero_pp))
+
+        # Compute the underlying value of the zero label. Since label objects don't track their underlying semantic
+        # value, we have do this in a slightly roundabout wy
+        zero_label_value = gate.run(in1_labels.index(in1_zero_pp), in2_labels.index(in2_zero_pp))
+
+        # manually generate the other output label
+        if config.USE_FREE_XOR:
+            zero_label_other = label.from_bitstring(zero_label.to_bitstring() ^ self.R)
+        else:
+            zero_label_other = label.from_bitstring(bitstring.BitArray(bytes=os.urandom(16)))
+
+        # fix the other label point&permute bit, which needs to be the opposite of the zero label--whatever its one is
+        zero_label_other.pp_bit = not zero_label.pp_bit
+
+        out_labels = [None] * 2
+
+        out_labels[zero_label_value] = zero_label
+        out_labels[not zero_label_value] = zero_label_other
+        self.wire_labels[gate.out] = out_labels
+
+        # now we proceed in a very similar way to the vanilla garbling
+        for selection in [(0, 0), (0, 1), (1, 0), (1, 1)]:  # for each possible input configuration...
+            # grab the labels corresponding to that configuration
+            l1 = in1_labels[selection[0]]
+            l2 = in2_labels[selection[1]]
+            # no need to do this for the pair corresponding to the zero ciphertext... this is the point of GRR3
+            if l1 != in1_zero_pp or l2 != in2_zero_pp:
+                output_bit = gate.run(selection[0], selection[1])
+                lout = out_labels[output_bit]
+                print(
+                    "    Encrypting label {} with {}, {}, for {} = {} {} {}".format(lout, l1, l2, output_bit,
+                                                                                    selection[0], gate.op,
+                                                                                    selection[1]))
+                encrypted_label = crypto_utils.encrypt(l1, crypto_utils.encrypt(l2, lout))
+                self.encrypted_entries[encrypted_label] = (l1, l2)  # cache ciphertext -> keys, to make it easier to p&p
+                print("    Encrypted label: " + str(encrypted_label.hex))
+                gate.table.append(encrypted_label)
+        return out_labels
     '''
     Garble a XOR gate using the free-XOR technique. 
     '''
@@ -120,6 +167,9 @@ class Alice:
         print("ALICE: Garbling gate {} ".format(gate))
         gate.table = []
         out_labels = label.generate_pair()  # grab us a fresh set of labels
+        if config.USE_GRR3:
+            l1 = in1_labels[0] if in1_labels[0].pp_bit == 0 else in1_labels[1]
+            l2 = in2_labels[0] if in2_labels[0].pp_bit == 0 else in2_labels[0]
         print("ALICE: Generating labels for wire {}: 0 = {}, 1 = {}".format(gate.out, out_labels[0], out_labels[1]))
         self.wire_labels[gate.out] = out_labels
         for selection in [(0, 0), (0, 1), (1, 0), (1, 1)]:  # for each possible input configuration...
@@ -188,8 +238,8 @@ class Alice:
                                             1].pp_bit)
                     print("ALICE: Shuffling garbled table according to select bits. The final order is:")
                     for e in gate.table:
-                        print("    {}{}: {}".format(self.encrypted_entries[e][0].pp_bit,
-                                                    self.encrypted_entries[e][1].pp_bit, e.hex))
+                        print("    {}{}: {}".format(int(self.encrypted_entries[e][0].pp_bit),
+                                                    int(self.encrypted_entries[e][1].pp_bit), e.hex))
                 else:
                     print("ALICE: Randomly shuffling garbled table for gate " + str(gate))
                     random.shuffle(gate.table)
