@@ -149,12 +149,18 @@ def main():
     alice.circuit = circuit
 
     # Instruct Alice to generate labels and garble garble gates using the generated labels
+    print()
+    print("Alice generates labels for the circuit, and garbles gates accordingly:")
     alice.garble_gates()
 
-    # Instruct Alice to permute the garbled tables 
+    # Instruct Alice to permute the garbled tables
+    print()
+    print("Alice permutes the entries in each garbled gate's garbled truth table:")
     alice.permute_entries()
 
     # Transfer the circuit to Bob
+    print()
+    print("Alice transfers the circuit to Bob.")
     bob.circuit = alice.circuit
 
     for wire in alice.input_wires:
@@ -162,11 +168,17 @@ def main():
         bob.known_labels[wire] = alice.wire_labels[wire][alice.input_wires[wire]]
 
     # Simulate OT between Alice and Bob so that Bob can acquire labels corresponding to his input
+    print()
+    print("Bob uses OT to request from Alice labels corresponding to his input bits:")
     bob.request_labels(alice)
 
     # Instruct Bob to evaluate the circuit
+    print()
+    print("Bob proceeds to evaluate the circuit:")
     result = bob.evaluate()
 
+    print()
+    print("Alice reveals the value of the label that Bob computed as the circuit's output:")
     # Instruct Alice to reveal the result of Bob's computation
     alice.reveal_result(result)
 
