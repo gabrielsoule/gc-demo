@@ -5,7 +5,7 @@ gc-demo is a demonstrative implementation of garbled circuits, intended to accom
 A number of common GC optimizations are implemented and can be enabled or disabled at will, such as point-and-permute, GRR3, and free-XOR. As of writing (3/4/20), GRR3 has not yet been implemented. More advanced optimizations, such as FleXOR, GRR2, and Half-AND will be added eventually.
 
 ## Usage
-Run the program from the command line, and follow the prompts to simulate a GC exchange. The command-line flags that can be enabled are:
+Run `main.py` program from the command line, and follow the prompts to simulate a GC exchange. The command-line flags that can be enabled are:
 
 ```
 optional arguments:
