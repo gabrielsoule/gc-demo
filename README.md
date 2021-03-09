@@ -8,11 +8,14 @@ A number of common GC optimizations are implemented and can be enabled or disabl
 Run `main.py` program from the command line, and follow the prompts to simulate a GC exchange. The command-line flags that can be enabled are:
 
 ```
+usage: main.py [-h] [--point-permute] [--free-xor] [--grr3]
+
 optional arguments:
-  -h, --help            show this help message and exit
-  -pp POINT_PERMUTE, --point-permute POINT_PERMUTE
-                        enable the point-and-permute optimization
-  --free-xor FREE_XOR   enable the free-XOR optimization
+  -h, --help       show this help message and exit
+  --point-permute  enable the point-and-permute optimization
+  --free-xor       enable the free-XOR optimization
+  --grr3           enable the GRR3 optimization
+
 ```
 
 Below is a transcript of a sample session with the point-and-permute optimization (and no other optimizations) enabled. The circuit evaluated is the same as the one evaluated in the corresponding tutorial linked above.
