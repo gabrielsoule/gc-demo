@@ -66,12 +66,12 @@ def simplest_OT(m0, m1, i):
     print("OT: Alice encrypts m1 with key k1 and transfers to Bob c1 = E(k1, m1) = {}".format(c1))
 
     if i == 0:
-        decrypted_c0 = label.from_bitstring(crypto_utils.decrypt(bitstring.Bits(uint=k, length=2 ** 16), c0.bytes))
+        decrypted_c0 = label.from_bitstring(crypto_utils.decrypt(bitstring.BitArray(uint=k, length=2 ** 16), c0.bytes))
         print("OT: Bob successfully decrypts c0 to yield {}".format(decrypted_c0))
         # assert(decrypted_c0 == m0)
         return decrypted_c0
     else:
-        decrypted_c1 = label.from_bitstring(crypto_utils.decrypt(bitstring.Bits(uint=k, length=2 ** 16), c1.bytes))
+        decrypted_c1 = label.from_bitstring(crypto_utils.decrypt(bitstring.BitArray(uint=k, length=2 ** 16), c1.bytes))
         print("OT: Bob successfully decrypts c0 to yield {}".format(decrypted_c1))
         return decrypted_c1
         

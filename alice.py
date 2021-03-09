@@ -28,9 +28,16 @@ class Alice:
         self.encrypted_entries = dict()
 
         # the random R value for free-XOR. Only used if free-XOR is enabled
-        self.R = bitstring.Bits(bytes=os.urandom(config.LABEL_SIZE))
-        config.R = self.R
+
         if config.USE_FREE_XOR:
+            if config.USE_POINT_PERMUTE:
+                self.R = bitstring.Bits(bytes=os.urandom(16))
+            else:
+                # if we are using free-xor and NOT using point-and-permute, we need to to make sure R has the proper
+                # zero bits just like the labels, otherwise things get messed up!
+                self.R = bitstring.Bits(bytes=bytes(config.CLASSIC_SECURITY_PARAMETER)) + bitstring.Bits(
+                    bytes=os.urandom(16 - config.CLASSIC_SECURITY_PARAMETER))
+            config.R = self.R
             print("ALICE: Generating random R = {}".format(self.R.hex))
 
     def generate_labels(self):
@@ -74,12 +81,22 @@ class Alice:
             if gate.op == 'XOR' and config.USE_FREE_XOR:
                 return self.garble_gate_free_XOR(gate, in1_labels, in2_labels)
             else:
-                return self.garble_gate_standard(gate, in1_labels, in2_labels)
+                if config.USE_GRR3:
+                    return self.garble_gate_grr3(gate, in1_labels, in2_labels)
+                else:
+                    return self.garble_gate_standard(gate, in1_labels, in2_labels)
         else:
             labels = label.generate_pair()
             self.wire_labels[wire] = labels
             print("ALICE: Generating labels for wire {}: 0 = {}, 1 = {}".format(wire, labels[0], labels[1]))
             return labels  # wire is an input wire, so just generate a fresh pair of labels
+
+    '''
+    Garble a gate using the GRR3 optimization. Compatible with Free-XOR. 
+    '''
+
+    def garble_gate_grr3(self, gate, in1_labels, in2_labels):
+        pass
 
     '''
     Garble a XOR gate using the free-XOR technique. 
@@ -91,7 +108,7 @@ class Alice:
         out_labels[0].bits = in1_labels[0].bits ^ in2_labels[0].bits
         out_labels[1].bits = out_labels[0].bits ^ self.R
         out_labels[0].pp_bit = in1_labels[0].pp_bit ^ in2_labels[0].pp_bit
-        out_labels[1].pp_bit = in1_labels[0].pp_bit ^ in2_labels[0].pp_bit ^ bitstring.Bits(bin='0b1')
+        out_labels[1].pp_bit = in1_labels[0].pp_bit ^ in2_labels[0].pp_bit ^ True
         self.wire_labels[gate.out] = out_labels
         return out_labels
 
@@ -167,12 +184,12 @@ class Alice:
                 if config.USE_POINT_PERMUTE:
                     gate.table = sorted(gate.table,
                                         key=lambda entry:
-                                        2 * self.encrypted_entries[entry][0].pp_bit.bin + self.encrypted_entries[entry][
-                                            1].pp_bit.bin)
+                                        2 * self.encrypted_entries[entry][0].pp_bit + self.encrypted_entries[entry][
+                                            1].pp_bit)
                     print("ALICE: Shuffling garbled table according to select bits. The final order is:")
                     for e in gate.table:
-                        print("    {}{}: {}".format(self.encrypted_entries[e][0].pp_bit.bin,
-                                                    self.encrypted_entries[e][1].pp_bit.bin, e.hex))
+                        print("    {}{}: {}".format(self.encrypted_entries[e][0].pp_bit,
+                                                    self.encrypted_entries[e][1].pp_bit, e.hex))
                 else:
                     print("ALICE: Randomly shuffling garbled table for gate " + str(gate))
                     random.shuffle(gate.table)

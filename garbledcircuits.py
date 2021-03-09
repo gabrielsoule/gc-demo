@@ -1,24 +1,21 @@
-import alice
-import bob
-import circuit
 import config
 import argparse
 
 from gate import Gate
 from circuit import Circuit
+from alice import Alice
+from bob import Bob
 
 # We're going to map the output wire identifier of each gate to the gate itself
 # This makes our tree construction much more efficient!
 gates = dict()
-
-alice = alice.Alice()
-bob = bob.Bob()
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--point-permute", help="enable the point-and-permute optimization", action='store_true')
     parser.add_argument("--free-xor", help="enable the free-XOR optimization", action='store_true')
+    parser.add_argument("--grr3", help="enable the GRR3 optimization", action='store_true')
     args = parser.parse_args()
     if args.free_xor:
         config.USE_FREE_XOR = True
@@ -27,6 +24,13 @@ def main():
     if args.point_permute:
         config.USE_POINT_PERMUTE = True
         print("Optimization enabled: point-and-permute")
+
+    if args.grr3:
+        config.USE_GRR3 = True
+        print("Optimization enabled: point-and-permute")
+
+    alice = Alice()
+    bob = Bob()
 
     # In this implementation we store wires as strings, whose values are those supplied by the user. 
     # These strings uniquely identify the corresponding wire. Not to be confused with labels, for which there are 
